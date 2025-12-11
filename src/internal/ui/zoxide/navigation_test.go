@@ -63,13 +63,6 @@ func TestUpdateRenderIndex(t *testing.T) {
 		{name: "cursor 5 → renderIndex 1 (at bottom of page)", resultCnt: 10, cursor: 5, expectedRenderIndex: 1},
 		{name: "cursor 9 → renderIndex 5 (last page)", resultCnt: 10, cursor: 9, expectedRenderIndex: 5},
 		{name: "few results → renderIndex always 0", resultCnt: 3, cursor: 2, expectedRenderIndex: 0},
-		// NEW: test that renderIndex decreases when moving cursor up (fixes mistake #1)
-		{
-			name:                "moving cursor from 9 → 0 decreases renderIndex",
-			resultCnt:           10,
-			cursor:              0,
-			expectedRenderIndex: 0,
-		},
 	}
 
 	for _, td := range testdata {
@@ -84,4 +77,22 @@ func TestUpdateRenderIndex(t *testing.T) {
 				"renderIndex wrong for cursor=%d, results=%d", td.cursor, td.resultCnt)
 		})
 	}
+
+	func TestUpdateRenderIndex_DecreasesWhenMovingCursorUp(t *testing.T) {
+		m := setupTestModelWithResults(10)
+		m.width = 80
+		m.maxHeight = 24
+		// Simulate being at the bottom page.
+		m.cursor = 9
+		m.updateRenderIndex()
+		renderIndexAtBottom := m.renderIndex
+
+		// Move cursor up and recompute.
+		m.cursor = 0
+		m.updateRenderIndex()
+
+		if renderIndexAtBottom <= m.renderIndex {
+			t.Fatalf("expected renderIndex to decrease when moving cursor up, got bottom=%d, now=%d",+            renderIndexAtBottom, m.renderIndex)
+		}
+}
 }
